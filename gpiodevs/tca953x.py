@@ -48,6 +48,8 @@ class _TCA953x(object):
         self.PORT1_DIR = 0xff
         self.PORT0_VAL = 0x00
         self.PORT1_VAL = 0x00
+        self.PORT0_INP = 0x00
+        self.PORT1_INP = 0x00
 
 
         self.PIN_LUT_FOUR_PIN    = {
@@ -290,8 +292,14 @@ class _TCA953x(object):
         
         return(write_bytes)
 
-    def read_pins(self):
-        pass
+    def read_pins(self, pins : Union[int, str, list]):
+        
+        if (self.bus != None and self.num_ports >= 1):
+            self.bus.write([self.PORT0_INP_REG_ADDR])
+            self.PORT0_INP = self.bus.read(1)
+        if (self.bus != None and self.num_ports == 2):
+            self.bus.write([self.PORT1_INP_REG_ADDR])
+            self.PORT1_INP = self.bus.read(1)
 
     def write_port(self):
         pass
