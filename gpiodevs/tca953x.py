@@ -168,7 +168,7 @@ class _TCA953x(object):
                 msg = self.ident + ".set_direction(): invalid pin setting"
                 self.logger.warning(msg)
 
-        msg = self.ident + ".set_direction(): Port direction set to " + self.bin_str_fmt(dir)
+        msg = self.ident + ".set_direction(): port direction set to " + self.bin_str_fmt(dir)
         self.logger.debug(msg)
 
         dir_bytes = dir.to_bytes(self.num_ports, byteorder = "big")
@@ -218,9 +218,13 @@ class _TCA953x(object):
         if (self.bus != None and self.num_ports >= 1):
             self.bus.write([self.PORT0_OUT_REG_ADDR])
             self.PORT0_VAL = self.bus.read(1)
+            self.bus.write([self.PORT0_DIR_REG_ADDR])
+            self.PORT0_DIR = self.bus.read(1)
         if (self.bus != None and self.num_ports == 2):
             self.bus.write([self.PORT1_OUT_REG_ADDR])
             self.PORT1_VAL = self.bus.read(1)
+            self.bus.write([self.PORT1_DIR_REG_ADDR])
+            self.PORT1_DIR = self.bus.read(1)
 
         if (self.num_ports == 2):
             val = (self.PORT1_VAL << 8 ) | self.PORT0_VAL
@@ -247,6 +251,13 @@ class _TCA953x(object):
 
             n_pins = (self.num_ports * self.port_pins) - 1
 
+            if (pin >= 0 and pin <= (self.port_pins - 1) and (self.PORT0_DIR & pin) != pin):
+                msg = self.ident + ".write_pins(): pin " + str(pin) + " is not set as an output"
+                self.logger.warning(msg)
+            elif (pin > 7 and pin <= (n_pins - 1) and (self.PORT1_DIR & pin) != pin):
+                msg = self.ident + ".write_pins(): pin " + str(pin) + " is not set as an output"
+                self.logger.warning(msg)
+
             if (pin >= 0 and pin <= n_pins):
                 if (value == True):
                     val = val | (0x01 << pin)
@@ -261,7 +272,7 @@ class _TCA953x(object):
                 msg = self.ident + ".write_pins(): invalid pin setting"
                 self.logger.warning(msg)
 
-        msg = self.ident + ".write_pins(): Port set to " + self.bin_str_fmt(val)
+        msg = self.ident + ".write_pins(): port set to " + self.bin_str_fmt(val)
         self.logger.debug(msg)
 
         val_bytes = val.to_bytes(self.num_ports, byteorder = "big")
@@ -297,9 +308,13 @@ class _TCA953x(object):
         if (self.bus != None and self.num_ports >= 1):
             self.bus.write([self.PORT0_INP_REG_ADDR])
             self.PORT0_INP = self.bus.read(1)
+            self.bus.write([self.PORT0_DIR_REG_ADDR])
+            self.PORT0_DIR = self.bus.read(1)
         if (self.bus != None and self.num_ports == 2):
             self.bus.write([self.PORT1_INP_REG_ADDR])
             self.PORT1_INP = self.bus.read(1)
+            self.bus.write([self.PORT1_DIR_REG_ADDR])
+            self.PORT1_DIR = self.bus.read(1)
 
     def write_port(self):
         pass
@@ -311,6 +326,15 @@ class _TCA953x(object):
 ####################################################################################################################################################################################################################################################
 
 class TCA9536(_TCA953x):
+    """
+    ADDRESS SPACE:
+
+        0x41 : Fixed single address for TCA9536
+        0x40 : Fixed single address for TCA9536A
+        0x43 : Fixed single address for TCA9536B
+        0x42 : Fixed single address for TCA9536C
+
+    """
     def __init__(self, address, i2c_controller = None):
         super().__init__()
 
@@ -329,7 +353,14 @@ class TCA9536(_TCA953x):
         self.PORT0_VAL = 0x00
 
 class TCA9537(_TCA953x):
-    def __init__(self, address, i2c_controller = None):
+    """
+    ADDRESS SPACE:
+
+        0x49 : Fixed single address
+        
+    """
+    def __init__(self, i2c_controller = None):
+        self.address = 0x49
         super().__init__()
 
         self.num_ports = 1
@@ -350,6 +381,19 @@ class TCA9537(_TCA953x):
 ####################################################################################################################################################################################################################################################
 
 class TCA9534(_TCA953x):
+    """
+    ADDRESS SPACE:
+
+        0x20 : A2 = L, A1 = L, A0 = L
+        0x21 : A2 = L, A1 = L, A0 = H
+        0x22 : A2 = L, A1 = H, A0 = L
+        0x23 : A2 = L, A1 = H, A0 = H
+        0x24 : A2 = H, A1 = L, A0 = L
+        0x25 : A2 = H, A1 = L, A0 = H
+        0x26 : A2 = H, A1 = H, A0 = L
+        0x27 : A2 = H, A1 = H, A0 = H
+
+    """
     def __init__(self, address, i2c_controller = None):
         super().__init__()
 
@@ -364,6 +408,15 @@ class TCA9534(_TCA953x):
         self.PORT0_DIR_REG_ADDR = 0x03    
 
 class TCA9538(_TCA953x):
+    """
+    ADDRESS SPACE:
+
+        0x70 : A1 = L, A0 = L
+        0x71 : A1 = L, A0 = H
+        0x72 : A1 = H, A0 = L
+        0x73 : A1 = H, A0 = H
+
+    """
     def __init__(self, address, i2c_controller = None):
         super().__init__()
 
